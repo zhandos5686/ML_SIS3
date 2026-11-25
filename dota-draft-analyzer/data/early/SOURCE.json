@@ -1,0 +1,9 @@
+{
+  "mirror_repository": "nikkuper/coursera-dota-2",
+  "commit": "8fa622c3d0ea0a9401f958bf432269bc623c0fe4",
+  "download_url": "https://raw.githubusercontent.com/nikkuper/coursera-dota-2/8fa622c3d0ea0a9401f958bf432269bc623c0fe4/features.zip",
+  "original_description": "https://github.com/romovpa/kaggle-dota2-contest/blob/master/ContestDescription.ipynb",
+  "feature_extractor": "https://github.com/romovpa/kaggle-dota2-contest/blob/master/extract_features.py",
+  "license": "Underlying YASP dump: CC BY-SA 4.0, per original description",
+  "sha256": "06d86c9bfcae6751c79a1af32e523cf0bd77b3353917472df936845f4530de8d"
+}

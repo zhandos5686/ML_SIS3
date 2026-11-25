@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.pytest_cache/
+tracking/
+mlruns/
+*.log
+docker-state/

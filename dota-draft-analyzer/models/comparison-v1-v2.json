@@ -1,0 +1,13 @@
+{
+  "previous_accuracy": 0.5972411113269865,
+  "new_accuracy": 0.603652613172722,
+  "difference_pp": 0.641150184573538,
+  "paired_95pct_ci_pp": [
+    0.003463249056696871,
+    1.2788371200903792
+  ],
+  "new_only_correct": 594,
+  "old_only_correct": 528,
+  "mcnemar_exact_pvalue": 0.05226875658693671,
+  "note": "Same fixed Test as v1; development/search used only Train validation. CI is approximate paired normal interval, not a guarantee."
+}

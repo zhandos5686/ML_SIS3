@@ -1,0 +1,53 @@
+x-app: &app
+  build: .
+  image: dota-draft-analyzer:local
+
+services:
+  train:
+    <<: *app
+    profiles: [training]
+    command: python train.py
+    volumes:
+      - ./data:/app/data:ro
+      - ${DOTA_MODELS_DIR:-./models}:/app/models
+      - ${DOTA_TRACKING_DIR:-./tracking}:/app/tracking
+      - ${DOTA_MLRUNS_DIR:-./mlruns}:/app/mlruns
+
+  train-early:
+    <<: *app
+    profiles: [training]
+    command: python train_early.py
+    volumes:
+      - ./data:/app/data:ro
+      - ${DOTA_MODELS_DIR:-./models}:/app/models
+      - ${DOTA_TRACKING_DIR:-./tracking}:/app/tracking
+      - ${DOTA_MLRUNS_DIR:-./mlruns}:/app/mlruns
+
+  api:
+    <<: *app
+    ports: ["127.0.0.1:${DOTA_API_PORT:-8000}:8000"]
+    volumes:
+      - ${DOTA_MODELS_DIR:-./models}:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    <<: *app
+    command: streamlit run frontend.py --server.address=0.0.0.0 --server.port=8501
+    ports: ["127.0.0.1:${DOTA_FRONTEND_PORT:-8501}:8501"]
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+
+  mlflow:
+    <<: *app
+    command: mlflow ui --backend-store-uri sqlite:////app/tracking/mlflow.db --host 0.0.0.0 --port 5000
+    ports: ["127.0.0.1:${DOTA_MLFLOW_PORT:-5000}:5000"]
+    volumes:
+      - ${DOTA_TRACKING_DIR:-./tracking}:/app/tracking
+      - ${DOTA_MLRUNS_DIR:-./mlruns}:/app/mlruns

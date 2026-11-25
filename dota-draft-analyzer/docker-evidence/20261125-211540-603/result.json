@@ -1,0 +1,7 @@
+{
+  "status": "BLOCKED",
+  "startedAt": "2026-11-25T21:15:40.6244126+05:00",
+  "checks": [],
+  "error": "Docker Desktop is not installed. Follow DOCKER-SETUP.md, then run this script again.",
+  "completedAt": "2026-11-25T21:15:42.1827249+05:00"
+}

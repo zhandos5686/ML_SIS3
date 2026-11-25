@@ -1,0 +1,9 @@
+.venv
+.git
+__pycache__
+.pytest_cache
+tracking
+mlruns
+*.zip
+docker-state
+docker-evidence
