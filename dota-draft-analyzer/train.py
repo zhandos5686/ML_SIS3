@@ -37,6 +37,24 @@ def metrics(y, p):
     }.items()}
 
 
+def log_evaluation_plots(y, p, labels, prefix=''):
+    """ROC curve and confusion matrix of the final holdout as PNG artifacts of the active run."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay
+    roc = RocCurveDisplay.from_predictions(y, p, name='model')
+    roc.ax_.plot([0, 1], [0, 1], linestyle='--', color='grey', label='random (AUC = 0.5)')
+    roc.ax_.legend(loc='lower right')
+    roc.ax_.set_title('ROC curve, test')
+    mlflow.log_figure(roc.figure_, f'plots/{prefix}roc_curve.png')
+    plt.close(roc.figure_)
+    cm = ConfusionMatrixDisplay.from_predictions(y, (p >= .5).astype(int), display_labels=labels, cmap='Blues', values_format='d')
+    cm.ax_.set_title('Confusion matrix, test (threshold 0.5)')
+    mlflow.log_figure(cm.figure_, f'plots/{prefix}confusion_matrix.png')
+    plt.close(cm.figure_)
+
+
 def pipeline(model, interactions=False):
     if interactions:
         return Pipeline([('features', DraftInteractions(main_scale=10.)), ('classifier', model)])
@@ -121,6 +139,7 @@ def main():
         mlflow.log_params({'model': winner, 'train_rows': len(train), 'test_rows': len(test), 'seed': SEED, **candidates[winner].get_params()})
         mlflow.log_metrics({f'test_{k}': v for k, v in test_metrics.items()})
         mlflow.set_tags({'dataset': 'UCI Dota2 Games Results', 'dataset_date': '2016-08-13', 'selection': 'validation only'})
+        log_evaluation_plots(y_test, p, labels=['B wins', 'A wins'])
         info = mlflow.sklearn.log_model(champion, artifact_path='model', code_paths=[str(ROOT / 'draft_features.py'), str(ROOT / 'common.py')], signature=infer_signature(X.head(), champion.predict(X.head())), input_example=X.head())
         version = mlflow.register_model(info.model_uri, 'DotaDraftClassifier')
         mlflow.MlflowClient().set_registered_model_alias('DotaDraftClassifier', 'champion', version.version)

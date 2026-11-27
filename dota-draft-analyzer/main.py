@@ -1,5 +1,6 @@
 """HTTP serving; the trusted local model is loaded once during lifespan."""
 from contextlib import asynccontextmanager
+import json
 import os
 from pathlib import Path
 from typing import Annotated, Literal
@@ -61,14 +62,47 @@ class EarlyRequest(BaseModel):
         return self
 
 
-def create_app(model_path=None, early_model_path=None):
+def load_from_registry(uri, metrics_name):
+    """Load models:/Name@alias or models:/Name/<version> plus the report logged in the same run."""
+    import mlflow
+    import mlflow.sklearn
+    mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI', f'sqlite:///{(ROOT / "tracking/mlflow.db").as_posix()}'))
+    client = mlflow.MlflowClient()
+    ref = uri.removeprefix('models:/')
+    if '@' in ref:
+        name, alias = ref.split('@', 1)
+        version = client.get_model_version_by_alias(name, alias)
+    else:
+        name, number = ref.split('/', 1)
+        version = client.get_model_version(name, number)
+    model = mlflow.sklearn.load_model(f'models:/{name}/{version.version}')
+    report = mlflow.artifacts.download_artifacts(run_id=version.run_id, artifact_path=metrics_name)
+    metadata = json.loads(Path(report).read_text(encoding='utf-8'))
+    metadata.update(registry_name=name, registry_version=version.version, model_source=uri)
+    return {'model': model, 'metadata': metadata}
+
+
+def load_bundle(uri, path, metrics_name):
+    if uri:
+        return load_from_registry(uri, metrics_name)
+    if not path.exists():
+        return None
+    bundle = joblib.load(path)
+    bundle['metadata'].setdefault('model_source', str(path.name))
+    return bundle
+
+
+def create_app(model_path=None, early_model_path=None, model_uri=None, early_model_uri=None):
     path = Path(model_path or os.getenv('MODEL_PATH', str(ROOT / 'models/model.joblib')))
     early_path = Path(early_model_path or os.getenv('EARLY_MODEL_PATH', str(ROOT / 'models/early_model.joblib')))
+    # Optional: serve the version the Registry alias points to, e.g. models:/DotaDraftClassifier@champion.
+    uri = model_uri or os.getenv('MODEL_URI')
+    early_uri = early_model_uri or os.getenv('EARLY_MODEL_URI')
 
     @asynccontextmanager
     async def lifespan(app):
-        app.state.bundle = joblib.load(path) if path.exists() else None
-        app.state.early_bundle = joblib.load(early_path) if early_path.exists() else None
+        app.state.bundle = load_bundle(uri, path, 'metrics.json')
+        app.state.early_bundle = load_bundle(early_uri, early_path, 'early_metrics.json')
         yield
         app.state.bundle = None
         app.state.early_bundle = None
@@ -88,7 +122,9 @@ def create_app(model_path=None, early_model_path=None):
 
     @app.get('/')
     def root():
-        return {'message': 'ML API is running', 'model_loaded': app.state.bundle is not None, 'early_model_loaded': app.state.early_bundle is not None}
+        source = lambda b: b['metadata'].get('model_source') if b else None
+        return {'message': 'ML API is running', 'model_loaded': app.state.bundle is not None, 'early_model_loaded': app.state.early_bundle is not None,
+                'model_source': source(app.state.bundle), 'early_model_source': source(app.state.early_bundle)}
 
     @app.get('/health')
     def health():

@@ -76,7 +76,7 @@ py -3.12 -m venv .venv
 
 ## Docker
 
-Для автоматической проверки на Windows после установки Docker Desktop запустите `./verify-docker.ps1`. Он использует отдельные порты и docker-state/, выполняет обучение и тесты в контейнерах и сохраняет реальный статус в docker-evidence/. Первичная настройка Windows описана в [DOCKER-SETUP.md](DOCKER-SETUP.md). Если Docker или WSL ещё не установлены, скрипт возвращает BLOCKED, а не имитирует успешную проверку.
+Для автоматической проверки на Windows после установки Docker Desktop запустите `./verify-docker.ps1`. Он использует отдельные порты и docker-state/, выполняет обучение и тесты в контейнерах и сохраняет реальный статус в docker-evidence/. После успешной сборки и обучения можно повторить только проверку сервисов командой `./verify-docker.ps1 -Resume`: она пересоздаёт контейнеры, проверяет готовность HTTP и совпадение версии API с champion в Registry. Первичная настройка Windows описана в [DOCKER-SETUP.md](DOCKER-SETUP.md). Если Docker или WSL ещё не установлены, скрипт возвращает BLOCKED, а не имитирует успешную проверку.
 
 Нужен работающий Docker Desktop с Linux containers. Из папки проекта:
 
@@ -84,7 +84,7 @@ py -3.12 -m venv .venv
 docker compose build
 docker compose run --rm train
 docker compose run --rm train-early
-docker compose up -d api frontend mlflow
+docker compose up -d --force-recreate api frontend mlflow
 docker compose ps
 ```
 
@@ -134,7 +134,19 @@ Invoke-RestMethod -Uri http://localhost:8000/predict -Method Post -ContentType a
 5. В отчёте есть accuracy, precision, recall, F1, ROC AUC, log loss, Brier score, матрица ошибок, сравнение с baseline и пересечение признаков Train/Test. Метрики на Test без пересечений приводятся отдельно, если такие строки есть. F1 считается для победы A: baseline, всегда выбирающий A, может иметь более высокий F1 при плохом различении классов. Поэтому выбор модели опирается на ROC AUC, а оценка включает несколько метрик.
 6. Сохраняются SHA-256 обоих исходных CSV, дата обучения и полный порядок входных признаков.
 
-Каждая модель создаёт отдельный validation run в MLflow. Final run содержит итоговые параметры, метрики, артефакт модели и JSON-отчёт. Модель регистрируется как `DotaDraftClassifier`, получает автоматически возрастающую версию и alias `champion`. API загружает экспортированный joblib-файл этой версии один раз при старте; горячая загрузка Registry не заявляется.
+Каждая модель создаёт отдельный validation run в MLflow. Final run содержит итоговые параметры, метрики, артефакт модели, JSON-отчёт и графики `plots/roc_curve.png` и `plots/confusion_matrix.png` на Test (для пятой минуты дополнительно `plots/draft_only_*` модели только по героям). Модель регистрируется как `DotaDraftClassifier`, получает автоматически возрастающую версию и alias `champion`.
+
+### Загрузка модели из Registry
+
+По умолчанию API загружает экспортированный файл `models/*.joblib` один раз при старте. Если задать `MODEL_URI` и/или `EARLY_MODEL_URI`, API берёт модель из MLflow Model Registry — ту версию, на которую указывает alias, а метаданные — из `metrics.json` того же run:
+
+```powershell
+$env:MODEL_URI = "models:/DotaDraftClassifier@champion"
+$env:EARLY_MODEL_URI = "models:/DotaMinuteFiveClassifier@champion"
+.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+Можно указать и конкретную версию: `models:/DotaDraftClassifier/2`. Откуда загружена модель, показывает `GET /` (`model_source`), номер версии — `GET /metadata` и ответ `/predict`. Чтобы откатиться или выкатить другую версию, переставьте alias `champion` в MLflow UI и перезапустите API. Горячая перезагрузка без перезапуска не заявляется.
 
 Версия 2 использует парные признаки: на том же официальном Test accuracy выросла с 59.724% до 60.365%, ROC AUC с 0.63458 до 0.64399. Это 66 дополнительных верных прогнозов на 10 294 матчах. Прирост небольшой: точный тест Мак-Немара даёт p≈0.052, поэтому устойчивое улучшение на других матчах пока не доказано. Test уже использовался для отчёта v1; при улучшении параметры выбирались исключительно по Train/validation, а затем один выбранный вариант был проверен на том же фиксированном Test.
 

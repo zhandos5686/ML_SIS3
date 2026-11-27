@@ -18,7 +18,7 @@ from sklearn.pipeline import Pipeline
 from threadpoolctl import threadpool_limits
 from common import ROOT
 from early_features import EarlyFeatures, HERO_FIELDS, INPUT_FIELDS, from_raw, frame_to_payload, NOTE
-from train import metrics
+from train import log_evaluation_plots, metrics
 
 
 def chronological_parts(raw):
@@ -101,6 +101,8 @@ def main():
         mlflow.log_params({'model': early_name, 'snapshot_seconds': 300, 'split': 'chronological_70_15_15', **specs[early_name][0].get_params()})
         mlflow.log_metrics({f'test_{k}': v for k, v in report['test_metrics'].items()})
         mlflow.log_metrics({f'draft_test_{k}': v for k, v in report['draft_test_metrics'].items()})
+        log_evaluation_plots(y.iloc[test], probability, labels=['Dire wins', 'Radiant wins'])
+        log_evaluation_plots(y.iloc[test], draft_probability, labels=['Dire wins', 'Radiant wins'], prefix='draft_only_')
         info = mlflow.sklearn.log_model(champion, artifact_path='model', code_paths=[str(ROOT / 'early_features.py')],
             signature=infer_signature(X.head(), champion.predict(X.head())), input_example=X.head())
         version = mlflow.register_model(info.model_uri, 'DotaMinuteFiveClassifier')

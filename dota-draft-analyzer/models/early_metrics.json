@@ -280,7 +280,7 @@
   },
   "sha256": "06d86c9bfcae6751c79a1af32e523cf0bd77b3353917472df936845f4530de8d",
   "note": "Прогноз на отметке 5:00 по историческим матчам 2015 года. Все показатели должны относиться только к первым пяти минутам.",
-  "trained_at": "2026-11-25T14:37:22.511083+00:00",
+  "trained_at": "2026-11-27T16:48:33.614628+00:00",
   "examples": [
     {
       "radiant": {
@@ -392,7 +392,7 @@
     "accuracy_difference_pp": 10.819334933150493,
     "mcnemar_exact_pvalue": 8.123736174075679e-109
   },
-  "mlflow_run_id": "8490ee9f3b174331880e5752fb5e27a2",
+  "mlflow_run_id": "12699fe62dc042399dd7cd5d57fb5e7e",
   "registry_name": "DotaMinuteFiveClassifier",
-  "registry_version": 1
+  "registry_version": 2
 }
