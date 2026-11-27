@@ -9,7 +9,7 @@ STATS = ['gold', 'xp', 'lh', 'kills', 'deaths', 'level', 'items']
 HERO_FIELDS = [f'{side}{i}_hero' for side in ['r', 'd'] for i in range(1, 6)]
 STAT_FIELDS = [f'{side}_{stat}' for side in ['r', 'd'] for stat in STATS]
 INPUT_FIELDS = HERO_FIELDS + STAT_FIELDS
-NOTE = 'Прогноз на отметке 5:00 по историческим матчам 2015 года. Все показатели должны относиться только к первым пяти минутам.'
+NOTE = 'Prediction at 5:00 based on historical matches from 2015. All stats must refer to the first five minutes only.'
 
 
 def from_raw(raw):

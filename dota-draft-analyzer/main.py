@@ -24,7 +24,7 @@ class Draft(BaseModel):
     @model_validator(mode='after')
     def unique_heroes(self):
         if len(set(self.team_a + self.team_b)) != 10:
-            raise ValueError('Все 10 героев должны быть разными')
+            raise ValueError('All 10 heroes must be different')
         return self
 
 
@@ -58,7 +58,7 @@ class EarlyRequest(BaseModel):
     @model_validator(mode='after')
     def unique_heroes(self):
         if len(set(self.radiant.heroes + self.dire.heroes)) != 10:
-            raise ValueError('Все 10 героев должны быть разными')
+            raise ValueError('All 10 heroes must be different')
         return self
 
 
@@ -112,12 +112,12 @@ def create_app(model_path=None, early_model_path=None, model_uri=None, early_mod
 
     def bundle():
         if app.state.bundle is None:
-            raise HTTPException(503, 'Модель не найдена. Запустите python train.py и перезапустите API.')
+            raise HTTPException(503, 'Model not found. Run python train.py and restart the API.')
         return app.state.bundle
 
     def early_bundle():
         if app.state.early_bundle is None:
-            raise HTTPException(503, 'Модель пятой минуты не найдена. Запустите python train_early.py и перезапустите API.')
+            raise HTTPException(503, 'Minute-five model not found. Run python train_early.py and restart the API.')
         return app.state.early_bundle
 
     @app.get('/')
@@ -151,7 +151,7 @@ def create_app(model_path=None, early_model_path=None, model_uri=None, early_mod
         loaded = early_bundle()
         meta = loaded['metadata']
         if not set(snapshot.radiant.heroes + snapshot.dire.heroes).issubset(meta['active_hero_ids']):
-            raise HTTPException(422, 'Герой отсутствует в датасете первых пяти минут. См. /early/metadata.')
+            raise HTTPException(422, 'Hero is not present in the minute-five dataset. See /early/metadata.')
         row = payload_to_frame(snapshot.model_dump())
         probability = float(loaded['model'].predict_proba(row)[0, 1])
         return {'radiant_probability': probability, 'dire_probability': 1 - probability,
@@ -164,9 +164,9 @@ def create_app(model_path=None, early_model_path=None, model_uri=None, early_mod
         loaded = bundle()
         meta = loaded['metadata']
         if not set(draft.team_a + draft.team_b).issubset(meta['active_hero_ids']):
-            raise HTTPException(422, 'Герой отсутствует в обучающем датасете. См. /metadata.')
+            raise HTTPException(422, 'Hero is not present in the training dataset. See /metadata.')
         if draft.game_mode not in meta['game_modes'] or draft.game_type not in meta['game_types']:
-            raise HTTPException(422, 'Неизвестный режим или тип игры. См. /metadata.')
+            raise HTTPException(422, 'Unknown game mode or game type. See /metadata.')
         row = encode_draft(draft.team_a, draft.team_b, draft.game_mode, draft.game_type)
         p = float(loaded['model'].predict_proba(row)[0, 1])
         return Prediction(team_a_probability=p, team_b_probability=1-p,

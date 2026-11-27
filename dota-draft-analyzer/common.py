@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent
 HERO_COLUMNS = [f'hero_{i}' for i in range(1, 114)]
 FEATURES = ['game_mode', 'game_type', *HERO_COLUMNS]
 COLUMNS = ['win', 'cluster_id', *FEATURES]
-HISTORICAL_NOTE = 'Данные от 13 августа 2016 года. Оценка не отражает современную мету и не гарантирует исход матча.'
+HISTORICAL_NOTE = 'Data from 13 August 2016. The estimate does not reflect the current meta and does not guarantee the outcome.'
 
 
 def load_matches(path):
