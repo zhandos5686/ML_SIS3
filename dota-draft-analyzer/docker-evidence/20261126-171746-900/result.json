@@ -1,0 +1,29 @@
+﻿{
+    "status":  "PASSED",
+    "mode":  "resume-checks",
+    "startedAt":  "2026-11-26T17:17:46.9162203+05:00",
+    "checks":  [
+                   "Reused completed build and training stages recorded in the prior evidence report",
+                   "Container API root, both loaded models, Swagger, frontend HTTP, MLflow HTTP and live early prediction passed",
+                   "Full API and feature test suite passed inside the API container",
+                   "Streamlit AppTest executed real frontend-to-API inference inside containers",
+                   "Both champion models READY in the container-backed MLflow registry"
+               ],
+    "error":  null,
+    "reusedBuildTrainingEvidence":  "C:\\Users\\Zhandos\\Documents\\Codex\\2026-11-24\\file-c-users-zhandos-downloads-practical\\outputs\\dota-draft-analyzer\\docker-evidence\\20261126-171227-438\\result.json",
+    "prediction":  {
+                       "radiant_probability":  0.7034561968252794,
+                       "dire_probability":  0.2965438031747206,
+                       "predicted_winner":  "radiant",
+                       "snapshot_seconds":  300,
+                       "model_name":  "early_logistic_c01",
+                       "model_version":  "2",
+                       "note":  "ÐÑÐ¾Ð³Ð½Ð¾Ð· Ð½Ð° Ð¾ÑÐ¼ÐµÑÐºÐµ 5:00 Ð¿Ð¾ Ð¸ÑÑÐ¾ÑÐ¸ÑÐµÑÐºÐ¸Ð¼ Ð¼Ð°ÑÑÐ°Ð¼ 2015 Ð³Ð¾Ð´Ð°. ÐÑÐµ Ð¿Ð¾ÐºÐ°Ð·Ð°ÑÐµÐ»Ð¸ Ð´Ð¾Ð»Ð¶Ð½Ñ Ð¾ÑÐ½Ð¾ÑÐ¸ÑÑÑÑ ÑÐ¾Ð»ÑÐºÐ¾ Ðº Ð¿ÐµÑÐ²ÑÐ¼ Ð¿ÑÑÐ¸ Ð¼Ð¸Ð½ÑÑÐ°Ð¼."
+                   },
+    "urls":  {
+                 "mlflow":  "http://127.0.0.1:15000",
+                 "api":  "http://127.0.0.1:18000/docs",
+                 "frontend":  "http://127.0.0.1:18501"
+             },
+    "completedAt":  "2026-11-26T17:18:27.2340173+05:00"
+}

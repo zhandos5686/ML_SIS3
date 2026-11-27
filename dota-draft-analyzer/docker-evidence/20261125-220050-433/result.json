@@ -1,0 +1,9 @@
+﻿{
+    "status":  "FAILED",
+    "startedAt":  "2026-11-25T22:00:50.5012926+05:00",
+    "checks":  [
+
+               ],
+    "error":  "request returned 500 Internal Server Error for API route and version http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.56/info, check if the server supports the requested API version",
+    "completedAt":  "2026-11-25T22:01:38.6071117+05:00"
+}

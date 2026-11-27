@@ -127,6 +127,27 @@ $body = @{team_a=@(1,2,3,4,5); team_b=@(6,7,8,9,10); game_mode=2; game_type=2} |
 Invoke-RestMethod -Uri http://localhost:8000/predict -Method Post -ContentType application/json -Body $body
 ```
 
+## Pick advisor
+
+The **Pick advisor** section suggests the next hero for a partially finished draft. Enter the heroes picked so far (any number, even none), choose the team that picks next and press **Suggest picks**. The **Pick** button next to a suggestion adds that hero to the team, so a whole draft can be built step by step. Nothing is retrained: the advisor uses the same registered draft model.
+
+How it works (recommend.py):
+
+1. Every free hero is tried as the next pick of the chosen team.
+2. The model needs a complete 5v5 draft, so the remaining empty slots are filled with random free heroes 50 times and the probabilities are averaged (Monte Carlo). All candidates share the same random fill-ins, which reduces noise in their differences. If the candidate completes the draft, the estimate is exact.
+3. Heroes are ranked by the averaged win probability. "vs random pick" compares it with the average over all candidates, i.e. with a random next pick.
+4. Because the model is a logistic regression with pair features, every suggestion is explained by its weights in log-odds: the hero's own strength, synergy with picked allies and match-ups against picked enemies. A test checks that these weights add up exactly to the model's change in log-odds.
+
+`POST /recommend`:
+
+```json
+{"team_a": [1, 2, 3], "team_b": [6, 7, 8, 9], "side": "team_a", "game_mode": 2, "game_type": 2, "top": 5}
+```
+
+The response contains `recommendations` (hero, `win_probability`, `delta`, `hero_strength`, `reasons`), `random_pick_probability`, `exact` and `samples`. Duplicates, unknown heroes, a full team for `side` and more than five heroes per team are rejected with HTTP 422. A request takes about 0.1 seconds.
+
+Limitations: the model learned from 2016 matches and its ROC AUC is 0.64, so suggestions are dominated by heroes that won often then, and differences of 1–2 points are within noise. This is the model's opinion, not advice for the current meta.
+
 `GET /metadata` returns the available heroes, game modes, quality metrics and version. `GET /health` returns 503 if the model is not loaded. Without a model, `/` and `/docs` stay available. Restart the API after the first training. The ten heroes must be unique; unknown IDs, extra fields and non-integer values are rejected with HTTP 422.
 
 ## Training and honest evaluation
@@ -164,7 +185,7 @@ After training:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The tests check that training and API features match on a real match, the HTTP result with the real saved model, `/docs`, input errors, an unavailable model, the hero list, and loading the champion version from the Registry. The checks actually performed and the metrics are in `VALIDATION.md` (in Russian).
+The tests check that training and API features match on a real match, the HTTP result with the real saved model, `/docs`, input errors, an unavailable model, the hero list, loading the champion version from the Registry, and the pick advisor (exact last pick, mirrored drafts, weight explanations, invalid requests). The checks actually performed and the metrics are in `VALIDATION.md` (in Russian).
 
 ## Structure
 
@@ -179,6 +200,8 @@ heroes.py              hero names by ID
 main.py                FastAPI
 frontend.py            Streamlit client
 early_ui.py            minute-five stats form
+recommend.py           pick advisor: Monte Carlo scoring and weight explanations
+advisor_ui.py          pick advisor section
 i18n.py                interface texts in English and Russian
 early_features.py      allowlist and transforms for the new dataset
 train_early.py         independent training and comparison on one temporal Test
@@ -191,6 +214,6 @@ requirements.txt       pinned direct dependencies
 
 ## What to show at the defense
 
-Open the interface, load an example and get a prediction. Change one hero and recompute. Show that picking the same hero twice is rejected. Switch the language to show both versions of the interface. Open Swagger and send a POST request. On the quality tab, compare the baseline with the trained models. In MLflow, show the validation runs, the final run, its parameters, metrics, plots, the model and its version in the Registry. Explain the limitations of the historical data and the Train/validation/Test split.
+Open the interface, load an example and get a prediction. Change one hero and recompute. Show that picking the same hero twice is rejected. In the pick advisor, load the example draft, get suggestions, explain the weights and press Pick to continue the draft. Switch the language to show both versions of the interface. Open Swagger and send a POST request. On the quality tab, compare the baseline with the trained models. In MLflow, show the validation runs, the final run, its parameters, metrics, plots, the model and its version in the Registry. Explain the limitations of the historical data and the Train/validation/Test split.
 
 Do not add the local `tracking/`, `mlruns/` folders or the virtual environment to Git.

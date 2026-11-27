@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-11-26T12:19:11.856680+00:00",
+  "verification_report": "docker-evidence/20261126-171746-900/result.json",
+  "models": {
+    "metadata": {
+      "status_code": 200,
+      "registry_version": 2
+    },
+    "early/metadata": {
+      "status_code": 200,
+      "registry_version": 2
+    }
+  },
+  "http": {
+    "http://127.0.0.1:18000/docs": 200,
+    "http://127.0.0.1:18501/_stcore/health": 200,
+    "http://127.0.0.1:15000/health": 200
+  },
+  "prediction": {
+    "radiant_probability": 0.7034561968252794,
+    "dire_probability": 0.2965438031747206,
+    "predicted_winner": "radiant",
+    "snapshot_seconds": 300,
+    "model_name": "early_logistic_c01",
+    "model_version": "2",
+    "note": "Прогноз на отметке 5:00 по историческим матчам 2015 года. Все показатели должны относиться только к первым пяти минутам."
+  }
+}

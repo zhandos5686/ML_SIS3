@@ -32,13 +32,18 @@ except (requests.RequestException, ValueError):
 
 hero_names = {h['id']: h['name'] for h in meta['heroes']}
 ids = sorted(hero_names, key=hero_names.get)
-early_tab, draft_tab, quality_tab, about_tab = st.tabs([t('tab_early'), t('tab_draft'), t('tab_quality'), t('tab_about')])
+# A keyed radio instead of st.tabs: st.tabs jumps back to the first tab after every button press.
+PAGES = ['early', 'draft', 'advisor', 'quality', 'about']
+st.session_state.setdefault('page', 'early')
+page = st.radio('Section', PAGES, format_func=lambda p: t('tab_' + p), horizontal=True,
+                label_visibility='collapsed', key='page')
+st.divider()
 
-with early_tab:
+if page == 'early':
     from early_ui import render
     render(API)
 
-with draft_tab:
+if page == 'draft':
     st.write(t('draft_intro'))
     example_a, example_b = [1, 2, 3, 4, 5], [6, 7, 8, 9, 10]
     if st.button(t('load_example')):
@@ -88,7 +93,11 @@ with draft_tab:
     elif saved:
         st.info(t('draft_changed'))
 
-with quality_tab:
+if page == 'advisor':
+    from advisor_ui import render as render_advisor
+    render_advisor(API, hero_names, ids, st.session_state.get('game_mode', 2), st.session_state.get('game_type', 2))
+
+if page == 'quality':
     st.subheader(t('quality_title'))
     st.write(t('rows', train=meta['train_rows'], test=meta['test_rows']))
     st.caption(t('selection_note'))
@@ -98,7 +107,7 @@ with quality_tab:
     st.write(t('confusion'))
     st.dataframe(pd.DataFrame(meta['confusion_matrix'], index=[t('true_b'), t('true_a')], columns=[t('pred_b'), t('pred_a')]), use_container_width=True)
 
-with about_tab:
+if page == 'about':
     st.subheader(t('about_title'))
     st.write(t('about_arch'))
     st.write(t('about_modes'))

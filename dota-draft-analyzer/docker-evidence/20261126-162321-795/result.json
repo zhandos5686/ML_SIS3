@@ -1,0 +1,10 @@
+﻿{
+    "status":  "FAILED",
+    "startedAt":  "2026-11-26T16:23:21.8950318+05:00",
+    "checks":  [
+                   "Docker image built successfully",
+                   "Both models trained and registered inside Linux containers"
+               ],
+    "error":  "Базовое соединение закрыто: Соединение было неожиданно закрыто.",
+    "completedAt":  "2026-11-26T16:27:59.0857220+05:00"
+}

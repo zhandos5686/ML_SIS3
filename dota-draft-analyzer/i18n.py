@@ -46,6 +46,40 @@ TEXT = {
     'historical_note': {'en': 'Data from 13 August 2016. The estimate does not reflect the current meta and does not guarantee the outcome.',
                         'ru': 'Данные от 13 августа 2016 года. Оценка не отражает современную мету и не гарантирует исход матча.'},
 
+    # Pick advisor tab
+    'tab_advisor': {'en': 'Pick advisor', 'ru': 'Советник пиков'},
+    'adv_intro': {'en': 'Enter the heroes picked so far (any number, even none) and choose the team that picks next. The draft model scores every free hero for that team.',
+                  'ru': 'Укажите уже выбранных героев (любое количество, можно ни одного) и команду, которая пикает следующей. Модель драфта оценит каждого свободного героя для этой команды.'},
+    'adv_picked': {'en': '{team} — picked so far', 'ru': '{team} — уже выбраны'},
+    'adv_side': {'en': 'Who picks next?', 'ru': 'Кто пикает следующим?'},
+    'adv_example': {'en': 'Load example draft', 'ru': 'Загрузить пример драфта'},
+    'adv_clear': {'en': 'Clear', 'ru': 'Очистить'},
+    'adv_full': {'en': 'This team already has five heroes. Choose the other team or remove a hero.',
+                 'ru': 'У этой команды уже пять героев. Выберите другую команду или уберите героя.'},
+    'adv_duplicate': {'en': 'A hero is picked by both teams. Each hero can be picked only once.',
+                      'ru': 'Герой выбран обеими командами. Каждого героя можно выбрать только один раз.'},
+    'adv_button': {'en': 'Suggest picks', 'ru': 'Подобрать героя'},
+    'adv_spinner': {'en': 'Scoring every free hero…', 'ru': 'Оцениваем всех свободных героев…'},
+    'adv_failed': {'en': 'Recommendations unavailable. Check the API and try again.',
+                   'ru': 'Рекомендации недоступны. Проверьте API и повторите запрос.'},
+    'adv_title': {'en': 'Best next picks for {team}', 'ru': 'Лучшие следующие пики: {team}'},
+    'adv_random': {'en': 'Win chance if the next pick were random: {p:.1%}', 'ru': 'Шанс победы при случайном следующем пике: {p:.1%}'},
+    'adv_exact': {'en': 'This pick completes the draft, so the estimate is exact.',
+                  'ru': 'Этот пик завершает драфт, поэтому оценка точная.'},
+    'adv_sampled': {'en': 'Empty slots are filled with random free heroes {n} times and the results are averaged (Monte Carlo).',
+                    'ru': 'Пустые слоты {n} раз заполняются случайными свободными героями, результаты усредняются (метод Монте-Карло).'},
+    'adv_col_hero': {'en': 'Hero', 'ru': 'Герой'},
+    'adv_col_win': {'en': 'Win chance', 'ru': 'Шанс победы'},
+    'adv_col_gain': {'en': 'vs random pick', 'ru': 'vs случайный пик'},
+    'adv_col_why': {'en': 'Why (model weights)', 'ru': 'Почему (веса модели)'},
+    'adv_pick': {'en': 'Pick', 'ru': 'Взять'},
+    'adv_strength': {'en': 'strong hero {v:+.2f}', 'ru': 'сильный герой {v:+.2f}'},
+    'adv_weak': {'en': 'hero on its own {v:+.2f}', 'ru': 'герой сам по себе {v:+.2f}'},
+    'adv_ally': {'en': 'with {name} {v:+.2f}', 'ru': 'с {name} {v:+.2f}'},
+    'adv_opponent': {'en': 'vs {name} {v:+.2f}', 'ru': 'против {name} {v:+.2f}'},
+    'adv_note': {'en': 'Weights are log-odds from the logistic regression: positive values raise the chance of the picking team. The model learned from 2016 matches, so this is the model’s opinion, not advice for the current meta. Differences of 1–2 points are within noise.',
+                 'ru': 'Веса — логарифм шансов из логистической регрессии: положительные значения повышают шанс команды, которая пикает. Модель обучена на матчах 2016 года, поэтому это мнение модели, а не совет для современной меты. Разница в 1–2 пункта — в пределах шума.'},
+
     # Quality tab
     'quality_title': {'en': 'Evaluation on held-out matches', 'ru': 'Проверка на отложенных матчах'},
     'rows': {'en': 'Training set: {train:,} · Test set: {test:,}', 'ru': 'Обучающая выборка: {train:,} · Тестовая: {test:,}'},
@@ -136,14 +170,17 @@ def t(key, **kwargs):
     return text.format(**kwargs) if kwargs else text
 
 
-ACTION_KEYS = {'early_load', 'early_predict', 'lang'}
+FORM_KEYS = ('a_', 'b_', 'game_mode', 'game_type', 'early_radiant_', 'early_dire_', 'early_example_choice',
+             'adv_a', 'adv_b', 'adv_side', 'page')
+BUTTON_SUFFIXES = ('_btn', '_go')
 
 
 def keep_form_state():
     """Translated labels give widgets a new identity, which would reset their values.
-    Re-assigning keyed values each run keeps heroes and stats when the language changes."""
+    Re-assigning input values each run keeps heroes and stats when the language changes.
+    Buttons are skipped: Streamlit does not allow setting their state."""
     for key in list(st.session_state.keys()):
-        if key not in ACTION_KEYS and key not in {'prediction', 'early_prediction'}:
+        if key.startswith(FORM_KEYS) and not key.endswith(BUTTON_SUFFIXES) and not key.startswith('adv_pick_'):
             st.session_state[key] = st.session_state[key]
 
 

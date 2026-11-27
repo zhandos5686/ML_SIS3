@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 from common import ROOT, HISTORICAL_NOTE, encode_draft
 from heroes import HEROES
 from early_features import NOTE as EARLY_NOTE, payload_to_frame
+from recommend import recommend
 
 
 class Draft(BaseModel):
@@ -25,6 +26,27 @@ class Draft(BaseModel):
     def unique_heroes(self):
         if len(set(self.team_a + self.team_b)) != 10:
             raise ValueError('All 10 heroes must be different')
+        return self
+
+
+class PartialDraft(BaseModel):
+    model_config = ConfigDict(extra='forbid', json_schema_extra={'example': {
+        'team_a': [1, 2, 3], 'team_b': [6, 7, 8, 9], 'side': 'team_a', 'game_mode': 2, 'game_type': 2, 'top': 5,
+    }})
+    team_a: list[StrictInt] = Field(default_factory=list, max_length=5)
+    team_b: list[StrictInt] = Field(default_factory=list, max_length=5)
+    side: Literal['team_a', 'team_b'] = 'team_a'
+    game_mode: StrictInt = 2
+    game_type: StrictInt = 2
+    top: Annotated[StrictInt, Field(ge=1, le=10)] = 5
+
+    @model_validator(mode='after')
+    def valid_partial_draft(self):
+        picked = self.team_a + self.team_b
+        if len(set(picked)) != len(picked):
+            raise ValueError('Heroes must be different')
+        if len(getattr(self, self.side)) == 5:
+            raise ValueError('The team you ask advice for already has five heroes')
         return self
 
 
@@ -172,6 +194,24 @@ def create_app(model_path=None, early_model_path=None, model_uri=None, early_mod
         return Prediction(team_a_probability=p, team_b_probability=1-p,
                           predicted_winner='team_a' if p >= .5 else 'team_b',
                           model_name=meta['selected_model'], model_version=str(meta['registry_version']), note=HISTORICAL_NOTE)
+
+    @app.post('/recommend')
+    def recommend_pick(draft: PartialDraft):
+        """Top heroes for the next pick of `side`, scored by the draft model."""
+        loaded = bundle()
+        meta = loaded['metadata']
+        if not set(draft.team_a + draft.team_b).issubset(meta['active_hero_ids']):
+            raise HTTPException(422, 'Hero is not present in the training dataset. See /metadata.')
+        if draft.game_mode not in meta['game_modes'] or draft.game_type not in meta['game_types']:
+            raise HTTPException(422, 'Unknown game mode or game type. See /metadata.')
+        result = recommend(loaded['model'], draft.team_a, draft.team_b, draft.side, meta['active_hero_ids'],
+                           draft.game_mode, draft.game_type, top=draft.top)
+        for item in result['recommendations']:
+            item['name'] = HEROES.get(item['hero_id'], f"Hero {item['hero_id']}")
+            for reason in item['reasons']:
+                reason['name'] = HEROES.get(reason['hero_id'], f"Hero {reason['hero_id']}")
+        return {**result, 'model_name': meta['selected_model'], 'model_version': str(meta['registry_version']),
+                'note': 'Recommendations reflect what the model learned from 2016 matches, not the current meta.'}
 
     return app
 
